@@ -1,0 +1,244 @@
+<div class="dialog-header">
+  <h2 mat-dialog-title>{{ data.timeslot ? 'Edit' : 'Create' }} Timeslot</h2>
+  <button mat-dialog-close class="btn close-dialog-btn"></button>
+</div>
+
+<mat-dialog-content>
+  <form [formGroup]="form">
+    <div class="timeslot-timerange-container">
+
+      <div class="form-group">
+        <label for="timeslotFrom">From</label>
+        <input
+          [matMenuTriggerFor]="fromTimeMenu"
+          (menuOpened)="onTimeMenuOpened(
+            fromHourMenuScrollbarRef,
+            '#from-hours-checked',
+            fromMinuteMenuScrollbarRef,
+            '#from-minutes-checked'
+          )"
+          [value]="form.value.timeslotFromHours + ':' + form.value.timeslotFromMinutes"
+          id="timeslotFrom"
+          class="form-control"
+          readonly
+        />
+        <mat-menu #fromTimeMenu="matMenu" class="time-menu">
+          <div class="hour-list-wrapper">
+            <ng-scrollbar [shown]="'always'" [compact]="true" #fromHourMenuScrollbarRef>
+              <ul class="hour-list">
+                <li
+                  *ngFor="let hour of hours; index as i"
+                  (click)="$event.stopPropagation(); selectHours(hour, 'from')"
+                  [id]="form.value.timeslotFromHours === hour ? 'from-hours-checked' : 'from-hours-' + i"
+                  class="hour-item"
+                >
+                  <span>{{ hour }} h</span>
+                </li>
+              </ul>
+            </ng-scrollbar>
+          </div>
+          <div class="minute-list-wrapper">
+            <ng-scrollbar [shown]="'always'" [compact]="true" #fromMinuteMenuScrollbarRef>
+              <ul class="minute-list">
+                <li
+                  *ngFor="let minute of minutes; index as i"
+                  (click)="$event.stopPropagation(); selectMinutes(minute, 'from')"
+                  [id]="form.value.timeslotFromMinutes === minute ? 'from-minutes-checked' : 'from-minutes-' + i"
+                  class="minute-item"
+                >
+                  <span>{{ minute }} m</span>
+                </li>
+              </ul>
+            </ng-scrollbar>
+          </div>
+        </mat-menu>
+      </div>
+
+      <div class="form-group">
+        <label for="timeslotTo">To</label>
+        <input
+          [matMenuTriggerFor]="toTimeMenu"
+          [value]="form.value.timeslotToHours + ':' + form.value.timeslotToMinutes"
+          (menuOpened)="onTimeMenuOpened(
+            toHourMenuScrollbarRef,
+            '#to-hours-checked',
+            toMinuteMenuScrollbarRef,
+            '#to-minutes-checked'
+          )"
+          id="timeslotTo"
+          class="form-control"
+          readonly
+        />
+        <mat-menu #toTimeMenu="matMenu" class="time-menu">
+          <div class="hour-list-wrapper">
+            <ng-scrollbar [shown]="'always'" [compact]="true" #toHourMenuScrollbarRef>
+              <ul class="hour-list">
+                <li
+                  *ngFor="let hour of hours; index as i"
+                  (click)="$event.stopPropagation(); selectHours(hour, 'to')"
+                  [id]="form.value.timeslotToHours === hour ? 'to-hours-checked' : 'to-hours-' + i"
+                  class="hour-item"
+                >
+                  <span>{{ hour }} h</span>
+                </li>
+              </ul>
+            </ng-scrollbar>
+          </div>
+          <div class="minute-list-wrapper">
+            <ng-scrollbar [shown]="'always'" [compact]="true" #toMinuteMenuScrollbarRef>
+              <ul class="minute-list">
+                <li
+                  *ngFor="let minute of minutes; index as i"
+                  (click)="$event.stopPropagation(); selectMinutes(minute, 'to')"
+                  [id]="form.value.timeslotToMinutes === minute ? 'to-minutes-checked' : 'to-minutes-' + i"
+                  class="minute-item"
+                >
+                  <span>{{ minute }} m</span>
+                </li>
+              </ul>
+            </ng-scrollbar>
+          </div>
+        </mat-menu>
+      </div>
+
+    </div>
+  </form>
+
+  <div class="search-bucket-wrapper">
+    <label for="search-bucket">Choose a Bucket or Playlist</label>
+    <input
+      #searchInput
+      [placeholder]="'Search a ' +  (tracksContainerType === PLAYLIST ? 'Playlist' : 'Bucket')"
+      [disabled]="isLoading"
+      (keyup)="searchTracksContainers(searchInput.value.trim())"
+      type="text"
+      id="search-bucket"
+      class="input-search"
+    />
+  </div>
+
+  <div class="playlists-buckets-switcher-container">
+    <div class="switcher-button">
+      <label>
+        <input
+          [(ngModel)]="tracksContainerType"
+          (change)="selectTracksContainerType(PLAYLIST)"
+          type="radio"
+          value="PLAYLIST"
+        />
+        <span class="label">Playlists</span>
+      </label>
+
+      <label>
+        <input
+          [(ngModel)]="tracksContainerType"
+          (change)="selectTracksContainerType(BUCKET)"
+          type="radio"
+          value="BUCKET"
+        />
+        <span class="label">Buckets</span>
+      </label>
+    </div>
+  </div>
+
+  <div class="tracks-container-section">
+
+    <div *ngIf="isLoading" class="spinner-wrapper">
+      <mat-progress-spinner mode="indeterminate" [diameter]="50"></mat-progress-spinner>
+    </div>
+
+    <div
+      *ngIf="!isLoading && playlists && playlists.length === 0 && tracksContainerType === PLAYLIST"
+      class="no-tracks-container-container"
+    >
+      <div class="no-tracks-container-image"></div>
+      <div class="no-tracks-container-message">There are no playlists in your library</div>
+    </div>
+
+    <div
+      *ngIf="!isLoading && buckets && buckets.length === 0 && tracksContainerType === BUCKET"
+      class="no-tracks-container-container"
+    >
+      <div class="no-tracks-container-image"></div>
+      <div class="no-tracks-container-message">There are no buckets in your library</div>
+    </div>
+
+    <div
+      *ngIf="!isLoading && playlists.length > 0 && filteredPlaylists.length === 0 && tracksContainerType === PLAYLIST"
+      class="no-tracks-containers-found-message-container"
+    >
+      <div class="message-wrapper">
+        <div class="not-found-image"></div>
+        <p>No Playlists found</p>
+      </div>
+    </div>
+
+    <div
+      *ngIf="!isLoading && buckets.length > 0 && filteredBuckets.length === 0 && tracksContainerType === BUCKET"
+      class="no-tracks-containers-found-message-container"
+    >
+      <div class="message-wrapper">
+        <div class="not-found-image"></div>
+        <p>No Buckets found</p>
+      </div>
+    </div>
+
+    <div
+      *ngIf="!isLoading && filteredBuckets.length > 0 && tracksContainerType === BUCKET"
+      class="tracks-container-list-wrapper"
+    >
+      <ng-scrollbar [compact]="true">
+        <ul class="tracks-container-list">
+          <li
+            *ngFor="let bucket of filteredBuckets"
+            (click)="selectTracksContainer(bucket.id, BUCKET)"
+            [ngClass]="{
+              'selected': (bucket.id === selectedTracksContainer?.id) && (selectedTracksContainer?.type === BUCKET),
+              'initial-selected': (bucket.id === initialSelectedTracksContainer?.id) &&
+                (initialSelectedTracksContainer?.type === BUCKET)
+            }"
+            class="tracks-container-item-wrapper"
+          >
+            <app-tracks-container-item [tracksContainer]="bucket"></app-tracks-container-item>
+            <div class="checkmark-container"></div>
+          </li>
+        </ul>
+      </ng-scrollbar>
+    </div>
+
+    <div
+      *ngIf="!isLoading && filteredPlaylists.length > 0 && tracksContainerType === PLAYLIST"
+      class="tracks-container-list-wrapper"
+    >
+      <ng-scrollbar [compact]="true">
+        <ul class="tracks-container-list">
+          <li
+            *ngFor="let playlist of filteredPlaylists"
+            (click)="selectTracksContainer(playlist.id, PLAYLIST)"
+            [ngClass]="{
+              'selected': (playlist.id === selectedTracksContainer?.id) && (selectedTracksContainer?.type === PLAYLIST),
+              'initial-selected': (playlist.id === initialSelectedTracksContainer?.id) &&
+                (initialSelectedTracksContainer?.type === PLAYLIST)
+            }"
+            class="tracks-container-item-wrapper"
+          >
+            <app-tracks-container-item [tracksContainer]="playlist"></app-tracks-container-item>
+            <div class="checkmark-container"></div>
+          </li>
+        </ul>
+      </ng-scrollbar>
+    </div>
+
+  </div>
+
+</mat-dialog-content>
+
+<div mat-dialog-actions>
+  <button
+    [disabled]="isLoading || !isFormValid()"
+    (click)="saveTimeslot()"
+    class="btn save-timeslot-btn"
+  >
+    {{ data.timeslot ? 'Edit' : 'Create' }} Timeslot
+  </button>
+</div>
